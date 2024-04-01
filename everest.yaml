@@ -1,0 +1,6 @@
+- Name: "                                                                                                               AF2024"
+  Version: 0.1.0
+  DLL: bin/AF2024.dll
+  Dependencies:
+    - Name: EverestCore
+      Version: 1.4703.0
