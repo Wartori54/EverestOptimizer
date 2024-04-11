@@ -119,7 +119,9 @@ public class AF2024Module : EverestModule {
             new Hook(
                 typeof(EverestSplashHandler).GetMethod("UpdateSplashLoadingProgress",
                     BindingFlags.Static | BindingFlags.NonPublic, new[] { typeof(string) }) 
-                    ?? throw MethodBroke(nameof(EverestSplashHandler), "UpdateSplashLoadingProgress"),
+                    ?? typeof(EverestSplashHandler).GetMethod("SendMessageToSplash",
+                    BindingFlags.Static | BindingFlags.NonPublic, new []{ typeof(string) })
+                    ?? throw MethodBroke(nameof(EverestSplashHandler), "UpdateSplashLoadingProgress or SendMessageToSplash"),
                 Hook_SplashUpdate);
         // Here the total to load value must have not been messed with (yet)
         realTotalMods = (int)(totalToLoadField.GetValue(null) 
