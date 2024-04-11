@@ -90,8 +90,10 @@ public class AF2024Module : EverestModule {
         // release builds use info logging to reduce spam in log files
         Logger.SetLogLevel(nameof(AF2024Module), LogLevel.Info);
 #endif
-        amountLoadedField = typeof(EverestSplashHandler).GetField("loadedMods", BindingFlags.Static | BindingFlags.NonPublic) ?? throw ModBroke();
-        totalToLoadField = typeof(EverestSplashHandler).GetField("totalMods", BindingFlags.Static | BindingFlags.NonPublic) ?? throw ModBroke();
+        amountLoadedField = typeof(EverestSplashHandler).GetField("loadedMods", BindingFlags.Static | BindingFlags.NonPublic)
+            ?? throw FieldBroke(nameof(EverestSplashHandler), "loadedMods");
+        totalToLoadField = typeof(EverestSplashHandler).GetField("totalMods", BindingFlags.Static | BindingFlags.NonPublic)
+            ?? throw FieldBroke(nameof(EverestSplashHandler), "totalMods");
     }
 
     public override void Load() {
@@ -110,15 +112,18 @@ public class AF2024Module : EverestModule {
         extraMods = disableExtra ? 0 : RNG.Next(10);
         
         splashFinishHook = new Hook(
-            typeof(EverestSplashHandler).GetMethod(nameof(EverestSplashHandler.StopSplash)) ?? throw ModBroke(),
+            typeof(EverestSplashHandler).GetMethod(nameof(EverestSplashHandler.StopSplash)) 
+                ?? throw MethodBroke(nameof(EverestSplashHandler), nameof(EverestSplashHandler.StopSplash)),
             Hook_StopSplash);
         splashUpdateHook =
             new Hook(
                 typeof(EverestSplashHandler).GetMethod("UpdateSplashLoadingProgress",
-                    BindingFlags.Static | BindingFlags.NonPublic, new[] { typeof(string) }) ?? throw ModBroke(),
+                    BindingFlags.Static | BindingFlags.NonPublic, new[] { typeof(string) }) 
+                    ?? throw MethodBroke(nameof(EverestSplashHandler), "UpdateSplashLoadingProgress"),
                 Hook_SplashUpdate);
         // Here the total to load value must have not been messed with (yet)
-        realTotalMods = (int)(totalToLoadField.GetValue(null) ?? throw ModBroke());
+        realTotalMods = (int)(totalToLoadField.GetValue(null) 
+            ?? throw NullBroke(nameof(realTotalMods)));
     }
 
     public override void Unload() {
@@ -126,8 +131,17 @@ public class AF2024Module : EverestModule {
         splashUpdateHook?.Dispose();
     }
 
-    private static Exception ModBroke() {
-        return new NotSupportedException("This mod broke :saddleline:");
+    private static Exception ModBroke(Exception? inner = null) {
+        return new NotSupportedException("This mod broke :saddleline:", inner);
+    }
+    private static Exception FieldBroke(string? className, string? fieldName) {
+        return ModBroke(new MissingFieldException(className, fieldName));
+    }
+    private static Exception MethodBroke(string? className, string? methodName){
+        return ModBroke(new MissingMethodException(className, methodName));
+    }
+    private static Exception NullBroke(string? paramName){
+        return ModBroke(new ArgumentNullException(paramName));
     }
 
     private static void Hook_SplashUpdate(Action<string> orig, string name) {
